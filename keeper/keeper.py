@@ -137,7 +137,12 @@ class Keeper:
         try:
             target = self.fund.rebalanceTarget()
             if target.needRebalance:
-                price_limit = self._get_rebalance_trade_price(target.side)
+                if int(target.amount) < config.POSITION_LIMIT:
+                    self.logger.info(f"rebalance amount to small. amount:{target.amount}")
+                    return
+
+                # price_limit = self._get_rebalance_trade_price(target.side)
+                price_limit = self.perp.markPrice()
                 self.get_gas_price()
                 side = 2 if target.side == PositionSide.LONG else 1
                 tx_hash = self.fund.rebalance(target.amount, price_limit, side, self.keeper_account, self.gas_price)
@@ -201,7 +206,8 @@ class Keeper:
         elif fund_state == State.Emergency:
             try:
                 fundMarginAccount = self.perp.getMarginAccount(Address(config.FUND_ADDRESS))
-                price_limit = self._get_redeem_trade_price(fundMarginAccount.side)
+                # price_limit = self._get_redeem_trade_price(fundMarginAccount.side)
+                price_limit = self.perp.markPrice()
                 total_supply = self.fund.total_supply()
                 self.get_gas_price()
                 side = 2 if fundMarginAccount.side == PositionSide.LONG else 1
